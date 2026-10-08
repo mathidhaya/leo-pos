@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { env } from "./config/env";
+import { prisma } from "./config/db";
 import { errorHandler, notFound } from "./middleware/errorHandler";
 
 export const app = express();
@@ -21,6 +22,21 @@ app.get("/api/v1/health", (_req, res) => {
       time: new Date().toISOString(),
     },
   });
+});
+
+app.get("/api/v1/health/db", async (_req, res, next) => {
+  try {
+    const [shops, products] = await Promise.all([
+      prisma.shop.count(),
+      prisma.product.count(),
+    ]);
+    res.json({
+      success: true,
+      data: { database: "connected", shops, products },
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // These two must stay LAST
