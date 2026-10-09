@@ -1,28 +1,32 @@
-import { useQuery } from "@tanstack/react-query";
-import { Coffee } from "lucide-react";
-import { api } from "./api/client";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import ProtectedRoute from "./components/routes/ProtectedRoute";
+import PublicOnlyRoute from "./components/routes/PublicOnlyRoute";
+import { AuthProvider } from "./context/AuthProvider";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
+import DashboardPage from "./pages/dashboard/DashboardPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 export default function App() {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["health"],
-    queryFn: async () => (await api.get("/health")).data.data,
-  });
-
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-leo-100">
-          <Coffee className="h-7 w-7 text-leo-700" />
-        </div>
-        <h1 className="text-2xl font-bold text-leo-700">Leo Cafe</h1>
-        <p className="mt-1 text-sm text-gray-500">Billing &amp; POS Management System</p>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route element={<PublicOnlyRoute />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          </Route>
 
-        <div className="mt-6 rounded-lg bg-leo-50 p-3 text-sm">
-          {isLoading && <span>Checking backend...</span>}
-          {isError && <span className="text-red-600">Backend not reachable. Is it running?</span>}
-          {data && <span className="text-leo-700">Backend connected ({data.status})</span>}
-        </div>
-      </div>
-    </div>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+          </Route>
+
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
