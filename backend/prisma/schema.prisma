@@ -100,6 +100,7 @@ model User {
   payments              Payment[]
   inventoryTransactions InventoryTransaction[]
   auditLogs             AuditLog[]
+  refreshTokens         RefreshToken[]
 
   @@index([shopId])
   @@map("users")
@@ -361,4 +362,22 @@ model AuditLog {
 
   @@index([shopId, createdAt])
   @@map("audit_logs")
+}
+
+// ---------- Sessions ----------
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  ip        String?
+  userAgent String?   @map("user_agent")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
 }
