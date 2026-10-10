@@ -246,6 +246,8 @@ model Order {
   deliveryCharge  Decimal       @default(0) @map("delivery_charge") @db.Decimal(12, 2)
   grandTotal      Decimal       @map("grand_total") @db.Decimal(12, 2)
   notes           String?
+  walkInName      String?       @map("walk_in_name")
+  idempotencyKey  String?       @map("idempotency_key")
   createdById     String        @map("created_by_id") @db.Uuid
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
@@ -259,6 +261,7 @@ model Order {
   inventoryTransactions InventoryTransaction[]
 
   @@unique([shopId, orderNo])
+  @@unique([shopId, idempotencyKey])
   @@index([shopId, createdAt])
   @@index([shopId, status])
   @@index([customerId])

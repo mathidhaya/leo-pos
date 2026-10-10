@@ -1,3 +1,4 @@
+import type { Prisma } from "../generated/prisma/client";
 import { prisma } from "../config/db";
 import { AppError } from "../utils/AppError";
 import {
@@ -9,6 +10,8 @@ import {
   type DiscountInput,
 } from "../utils/billing";
 import type { QuoteInput } from "../validators/pos.validators";
+
+export type OrderRequest = Pick<QuoteInput, "items" | "discount" | "orderType" | "deliveryCharge">;
 
 // The order screen only needs what is for sale. Cost price is never sent.
 export async function getCatalog(shopId: string) {
@@ -50,7 +53,7 @@ export async function getCatalog(shopId: string) {
   };
 }
 
-function toDiscountInput(discount: QuoteInput["discount"]): DiscountInput {
+function toDiscountInput(discount: OrderRequest["discount"]): DiscountInput {
   if (discount.type === "none") return { type: "none" };
 
   if (discount.type === "percent") {
@@ -68,7 +71,7 @@ function toDiscountInput(discount: QuoteInput["discount"]): DiscountInput {
   return { type: "amount", paise };
 }
 
-function toDeliveryPaise(input: QuoteInput): number {
+function toDeliveryPaise(input: OrderRequest): number {
   if (input.orderType !== "DELIVERY" || !input.deliveryCharge) return 0;
   const paise = parseMoneyToPaise(input.deliveryCharge);
   if (paise === null || paise > MAX_DELIVERY_CHARGE_PAISE) {
@@ -77,17 +80,18 @@ function toDeliveryPaise(input: QuoteInput): number {
   return paise;
 }
 
-// The server's own check of a bill. Prices and GST come from the database,
-// never from the browser, and stock is checked at the same time.
-export async function quoteOrder(user: { shopId: string }, input: QuoteInput) {
+// Loads the real products, checks they can be sold, and calculates the bill.
+// Prices and GST come from the database, never from the browser.
+// Used by both the quote and the real order, so they can never disagree.
+export async function prepareOrder(db: Pick<Prisma.TransactionClient, "product">, shopId: string, input: OrderRequest) {
   // The same product listed twice counts as one line
   const wanted = new Map<string, number>();
   for (const item of input.items) {
     wanted.set(item.productId, (wanted.get(item.productId) ?? 0) + item.quantity);
   }
 
-  const products = await prisma.product.findMany({
-    where: { shopId: user.shopId, id: { in: [...wanted.keys()] } },
+  const products = await db.product.findMany({
+    where: { shopId, id: { in: [...wanted.keys()] } },
     include: {
       category: { select: { isActive: true } },
       inventory: { select: { quantity: true } },
@@ -129,7 +133,13 @@ export async function quoteOrder(user: { shopId: string }, input: QuoteInput) {
   });
 
   if (!result.ok) throw new AppError(400, "INVALID_BILL", result.error);
-  const bill = result.bill;
+
+  return { ordered, wanted, bill: result.bill };
+}
+
+// The server's own check of a bill, before anything is saved.
+export async function quoteOrder(user: { shopId: string }, input: QuoteInput) {
+  const { ordered, wanted, bill } = await prepareOrder(prisma, user.shopId, input);
 
   return {
     orderType: input.orderType,

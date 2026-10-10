@@ -30,7 +30,7 @@ const ALL: Role[] = ["OWNER", "MANAGER", "CASHIER"];
 export const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard, roles: ALL },
   { label: "New Order", path: "/pos", icon: ShoppingCart, roles: ["OWNER", "CASHIER"] },
-  { label: "Orders", path: "/orders", icon: ClipboardList, roles: ALL, phase: 7 },
+  { label: "Orders", path: "/orders", icon: ClipboardList, roles: ALL },
   { label: "Products", path: "/products", icon: Package, roles: ["OWNER", "MANAGER"] },
   { label: "Categories", path: "/categories", icon: Tags, roles: ["OWNER", "MANAGER"] },
   { label: "Inventory", path: "/inventory", icon: Boxes, roles: ["OWNER", "MANAGER"], phase: 9 },

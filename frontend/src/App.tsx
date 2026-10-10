@@ -11,6 +11,7 @@ import CategoriesPage from "./pages/categories/CategoriesPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import OrdersPage from "./pages/orders/OrdersPage";
 import PosPage from "./pages/pos/PosPage";
 import ProductsPage from "./pages/products/ProductsPage";
 
@@ -32,6 +33,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/orders" element={<OrdersPage />} />
 
               <Route element={<ProtectedRoute roles={["OWNER", "CASHIER"]} />}>
                 <Route path="/pos" element={<PosPage />} />

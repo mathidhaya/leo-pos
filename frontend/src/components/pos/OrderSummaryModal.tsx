@@ -8,16 +8,20 @@ interface Props {
   quote: Quote;
   details: string[];
   warning: string | null;
+  error: string | null;
+  placing: boolean;
+  onPlace: () => void;
   onClose: () => void;
 }
 
-export default function OrderSummaryModal({ quote, details, warning, onClose }: Props) {
+export default function OrderSummaryModal({ quote, details, warning, error, placing, onPlace, onClose }: Props) {
   const hasDelivery = quote.orderType === "DELIVERY";
 
   return (
-    <Modal title="Order summary" onClose={onClose}>
+    <Modal title="Order summary" onClose={onClose} busy={placing}>
       <div className="space-y-4">
         {warning && <Alert variant="info">{warning}</Alert>}
+        {error && <Alert variant="error">{error}</Alert>}
 
         <div className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-700">
           {details.map((part, index) => (
@@ -71,19 +75,17 @@ export default function OrderSummaryModal({ quote, details, warning, onClose }: 
           </div>
         </dl>
 
-        <Alert variant="success">Prices, GST and stock were checked by the server just now.</Alert>
-
-        <div className="rounded-xl border border-dashed border-gray-300 p-3 text-sm text-gray-600">
-          This order is <strong>not saved yet</strong>. Saving orders comes in Step 7, and taking payment and printing the
-          invoice come in Step 8.
-        </div>
+        <p className="rounded-xl border border-dashed border-gray-300 p-3 text-xs text-gray-600">
+          Prices, GST and stock were checked by the server just now. The order is saved as <strong>Unpaid</strong>.
+          Taking payment and printing the invoice come in Step 8.
+        </p>
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Button variant="secondary" onClick={onClose} autoFocus>
+          <Button variant="secondary" onClick={onClose} disabled={placing}>
             Back to order
           </Button>
-          <Button disabled title="Available in Step 8">
-            Take payment
+          <Button onClick={onPlace} loading={placing}>
+            {placing ? "Placing order..." : "Place order"}
           </Button>
         </div>
       </div>

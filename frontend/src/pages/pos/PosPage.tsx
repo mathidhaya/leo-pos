@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, ShoppingCart } from "lucide-react";
-import { fetchCatalog, requestQuote } from "../../api/pos";
+import { createOrder, type CreateOrderRequest } from "../../api/orders";
+import { fetchCatalog, requestQuote, type QuoteRequest } from "../../api/pos";
 import CartPanel from "../../components/pos/CartPanel";
 import CategoryTabs from "../../components/pos/CategoryTabs";
+import OrderPlacedModal from "../../components/pos/OrderPlacedModal";
 import OrderSummaryModal from "../../components/pos/OrderSummaryModal";
 import ProductCard from "../../components/pos/ProductCard";
 import Alert from "../../components/ui/Alert";
@@ -34,6 +36,7 @@ export default function PosPage() {
 }
 
 function PosScreen({ userId }: { userId: string }) {
+  const queryClient = useQueryClient();
   const [cart, dispatch] = usePosCart(userId);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
@@ -47,6 +50,12 @@ function PosScreen({ userId }: { userId: string }) {
   const [quoteWarning, setQuoteWarning] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+
+  // Placing the order
+  const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
+  const [placing, setPlacing] = useState(false);
+  const [placeError, setPlaceError] = useState<string | null>(null);
+  const [placed, setPlaced] = useState<{ orderNo: number; total: string } | null>(null);
 
   const catalogQuery = useQuery({
     queryKey: ["pos-catalog"],
@@ -191,6 +200,18 @@ function PosScreen({ userId }: { userId: string }) {
 
   // ---------- Proceed to Payment: the server checks the bill ----------
 
+  function buildQuoteRequest(): QuoteRequest {
+    return {
+      items: lines.map(({ product, quantity }) => ({ productId: product.id, quantity })),
+      discount:
+        discountRead.input.type === "none"
+          ? { type: "none" }
+          : { type: cart.discountKind, value: cart.discountValue.trim() },
+      orderType: cart.orderType,
+      deliveryCharge: cart.orderType === "DELIVERY" ? cart.deliveryCharge.trim() || "0" : undefined,
+    };
+  }
+
   async function handleProceed() {
     setShowDetailErrors(true);
     setQuoteError(null);
@@ -199,27 +220,76 @@ function PosScreen({ userId }: { userId: string }) {
 
     setQuoting(true);
     try {
-      const result = await requestQuote({
-        items: lines.map(({ product, quantity }) => ({ productId: product.id, quantity })),
-        discount:
-          discountRead.input.type === "none"
-            ? { type: "none" }
-            : { type: cart.discountKind, value: cart.discountValue.trim() },
-        orderType: cart.orderType,
-        deliveryCharge: cart.orderType === "DELIVERY" ? cart.deliveryCharge.trim() || "0" : undefined,
-      });
+      const result = await requestQuote(buildQuoteRequest());
 
       const matches = paiseToDecimalString(bill.grandTotalPaise) === result.grandTotal;
       setQuoteWarning(
         matches ? null : "Prices or stock changed since this order was built. The totals below are the verified ones."
       );
       if (!matches) void catalogQuery.refetch();
+
+      // A fresh key for every summary: pressing "Place order" twice can only ever save one order
+      setIdempotencyKey(crypto.randomUUID());
+      setPlaceError(null);
       setQuote(result);
     } catch (err) {
       setQuoteError(getErrorMessage(err));
       if (getErrorCode(err) === "CART_UNAVAILABLE") void catalogQuery.refetch();
     } finally {
       setQuoting(false);
+    }
+  }
+
+  function closeSummary() {
+    setQuote(null);
+    setIdempotencyKey(null);
+    setPlaceError(null);
+  }
+
+  // ---------- Place order: the server saves it ----------
+
+  async function handlePlaceOrder() {
+    if (!quote || !idempotencyKey || placing) return;
+
+    setPlacing(true);
+    setPlaceError(null);
+
+    const isDineIn = cart.orderType === "DINE_IN";
+    const guests = cart.guests.trim();
+
+    const request: CreateOrderRequest = {
+      ...buildQuoteRequest(),
+      idempotencyKey,
+      expectedTotal: quote.grandTotal,
+      ...(isDineIn
+        ? { tableNo: cart.tableNo.trim() || undefined, guests: guests ? Number(guests) : null }
+        : {
+            customerName: cart.customerName.trim() || undefined,
+            customerPhone: cart.customerPhone.trim() || undefined,
+          }),
+      ...(cart.orderType === "DELIVERY" ? { address: cart.address.trim() } : {}),
+    };
+
+    try {
+      const order = await createOrder(request);
+
+      dispatch({ type: "clear" });
+      setShowDetailErrors(false);
+      setCartOpen(false);
+      setQuote(null);
+      setIdempotencyKey(null);
+      setPlaced({ orderNo: order.orderNo, total: order.grandTotal });
+
+      // Stock, the orders list and the dashboard have all changed
+      void queryClient.invalidateQueries({ queryKey: ["pos-catalog"] });
+      void queryClient.invalidateQueries({ queryKey: ["orders"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    } catch (err) {
+      setPlaceError(getErrorMessage(err));
+      const code = getErrorCode(err);
+      if (code === "CART_UNAVAILABLE" || code === "TOTAL_CHANGED") void catalogQuery.refetch();
+    } finally {
+      setPlacing(false);
     }
   }
 
@@ -349,9 +419,14 @@ function PosScreen({ userId }: { userId: string }) {
           quote={quote}
           details={describeOrder(cart)}
           warning={quoteWarning}
-          onClose={() => setQuote(null)}
+          error={placeError}
+          placing={placing}
+          onPlace={() => void handlePlaceOrder()}
+          onClose={closeSummary}
         />
       )}
+
+      {placed && <OrderPlacedModal orderNo={placed.orderNo} total={placed.total} onClose={() => setPlaced(null)} />}
 
       {confirmClear && (
         <ConfirmDialog
