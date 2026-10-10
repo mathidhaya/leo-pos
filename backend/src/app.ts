@@ -9,6 +9,7 @@ import { errorHandler, notFound } from "./middleware/errorHandler";
 import { authRouter } from "./routes/auth.routes";
 import { categoryRouter } from "./routes/category.routes";
 import { dashboardRouter } from "./routes/dashboard.routes";
+import { posRouter } from "./routes/pos.routes";
 import { productRouter } from "./routes/product.routes";
 import { uploadRouter } from "./routes/upload.routes";
 
@@ -54,6 +55,7 @@ app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/products", productRouter);
 app.use("/api/v1/uploads", uploadRouter);
+app.use("/api/v1/pos", posRouter);
 
 // These two must stay LAST
 app.use(notFound);

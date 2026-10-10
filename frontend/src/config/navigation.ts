@@ -29,7 +29,7 @@ const ALL: Role[] = ["OWNER", "MANAGER", "CASHIER"];
 // Who sees what follows the role list in the project spec.
 export const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard, roles: ALL },
-  { label: "New Order", path: "/pos", icon: ShoppingCart, roles: ["OWNER", "CASHIER"], phase: 6 },
+  { label: "New Order", path: "/pos", icon: ShoppingCart, roles: ["OWNER", "CASHIER"] },
   { label: "Orders", path: "/orders", icon: ClipboardList, roles: ALL, phase: 7 },
   { label: "Products", path: "/products", icon: Package, roles: ["OWNER", "MANAGER"] },
   { label: "Categories", path: "/categories", icon: Tags, roles: ["OWNER", "MANAGER"] },

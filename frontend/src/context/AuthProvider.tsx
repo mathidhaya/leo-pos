@@ -3,6 +3,7 @@ import * as authApi from "../api/auth";
 import { refreshSession, setSessionExpiredHandler } from "../api/client";
 import { setAccessToken } from "../api/tokenStore";
 import type { Session, User } from "../types/auth";
+import { clearPosDraft } from "../utils/posDraft";
 import { AuthContext, type AuthContextValue, type AuthStatus } from "./authContext";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -37,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [startSession, clearSession]);
 
   // If a request discovers the session is over, log the user out of the screen too.
+  // The unfinished order is kept, so a cashier who is signed out by surprise does not lose it.
   useEffect(() => {
     setSessionExpiredHandler(clearSession);
     return () => setSessionExpiredHandler(null);
@@ -62,6 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Even if the server cannot be reached, this device is logged out.
     }
+    // A deliberate logout also wipes the unfinished order (it holds customer details)
+    clearPosDraft();
     clearSession();
   }, [clearSession]);
 

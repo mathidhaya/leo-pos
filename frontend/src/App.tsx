@@ -11,6 +11,7 @@ import CategoriesPage from "./pages/categories/CategoriesPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import PosPage from "./pages/pos/PosPage";
 import ProductsPage from "./pages/products/ProductsPage";
 
 // Pages that are not built yet. When a phase builds a real page, its navigation entry
@@ -31,6 +32,10 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+
+              <Route element={<ProtectedRoute roles={["OWNER", "CASHIER"]} />}>
+                <Route path="/pos" element={<PosPage />} />
+              </Route>
 
               <Route element={<ProtectedRoute roles={["OWNER", "MANAGER"]} />}>
                 <Route path="/products" element={<ProductsPage />} />

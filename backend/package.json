@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
@@ -15,7 +15,8 @@
     "db:studio": "prisma studio",
     "db:sample-orders": "tsx prisma/sample-orders.ts generate",
     "db:sample-orders:clear": "tsx prisma/sample-orders.ts clear",
-    "db:dev-users": "tsx prisma/dev-users.ts"
+    "db:dev-users": "tsx prisma/dev-users.ts",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -45,6 +46,7 @@
     "@types/node": "^26.6.4",
     "prisma": "^7.10.0",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
   }
 }
