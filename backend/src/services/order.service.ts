@@ -18,14 +18,17 @@ const orderInclude = {
   customer: { select: { name: true, phone: true } },
   createdBy: { select: { name: true } },
   items: { orderBy: [{ nameSnapshot: "asc" }, { id: "asc" }] },
-  payments: { select: { method: true, amount: true }, orderBy: { createdAt: "asc" } },
-  invoice: { select: { invoiceNo: true } },
+  payments: { select: { method: true, amount: true, refundedAt: true }, orderBy: { createdAt: "asc" } },
+  invoice: { select: { id: true, invoiceNo: true } },
 } satisfies Prisma.OrderInclude;
 
 type OrderRow = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
 
+// Only the owner and managers may cancel an order that was already paid (which refunds it)
+const canRefund = (user: Actor) => user.role === "OWNER" || user.role === "MANAGER";
+
 // What the browser receives. Cost prices are never included.
-function toDetail(order: OrderRow) {
+function toDetail(order: OrderRow, refundAllowed: boolean) {
   return {
     id: order.id,
     orderNo: order.orderNo,
@@ -55,21 +58,27 @@ function toDetail(order: OrderRow) {
     tax: order.tax.toFixed(2),
     deliveryCharge: order.deliveryCharge.toFixed(2),
     grandTotal: order.grandTotal.toFixed(2),
-    payments: order.payments.map((payment) => ({ method: payment.method, amount: payment.amount.toFixed(2) })),
+    payments: order.payments.map((payment) => ({
+      method: payment.method,
+      amount: payment.amount.toFixed(2),
+      refundedAt: payment.refundedAt ? payment.refundedAt.toISOString() : null,
+    })),
+    invoiceId: order.invoice?.id ?? null,
     invoiceNo: order.invoice?.invoiceNo ?? null,
-    // The server decides which status buttons make sense
-    actions: allowedNextStatuses(order.status, order.paymentStatus),
+    canPay: order.paymentStatus === "UNPAID" && order.status !== "CANCELLED",
+    // The server decides which status buttons make sense for this person
+    actions: allowedNextStatuses(order.status, order.paymentStatus, refundAllowed),
   };
 }
 
-async function loadOrder(shopId: string, id: string) {
-  const order = await prisma.order.findFirst({ where: { id, shopId }, include: orderInclude });
+async function loadOrder(user: Actor, id: string) {
+  const order = await prisma.order.findFirst({ where: { id, shopId: user.shopId }, include: orderInclude });
   if (!order) throw new AppError(404, "ORDER_NOT_FOUND", "Order not found.");
-  return toDetail(order);
+  return toDetail(order, canRefund(user));
 }
 
 export function getOrder(user: Actor, id: string) {
-  return loadOrder(user.shopId, id);
+  return loadOrder(user, id);
 }
 
 // ---------- list ----------
@@ -278,12 +287,12 @@ async function placeOrder(tx: Prisma.TransactionClient, user: Actor, input: Crea
 export async function createOrder(user: Actor, input: CreateOrderInput, ctx: RequestContext) {
   // The same request arriving twice (double-click, retry) returns the first order
   const known = await findByKey(user.shopId, input.idempotencyKey);
-  if (known) return { order: await loadOrder(user.shopId, known.id), duplicate: true };
+  if (known) return { order: await loadOrder(user, known.id), duplicate: true };
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const orderId = await prisma.$transaction((tx) => placeOrder(tx, user, input), { timeout: 15000 });
-      const order = await loadOrder(user.shopId, orderId);
+      const order = await loadOrder(user, orderId);
 
       await logAudit(
         {
@@ -302,7 +311,7 @@ export async function createOrder(user: Actor, input: CreateOrderInput, ctx: Req
 
       // Someone saved the same request a moment ago, or two requests created the same new customer
       const raced = await findByKey(user.shopId, input.idempotencyKey);
-      if (raced) return { order: await loadOrder(user.shopId, raced.id), duplicate: true };
+      if (raced) return { order: await loadOrder(user, raced.id), duplicate: true };
       if (attempt === 2) throw err;
     }
   }
@@ -319,15 +328,15 @@ export async function updateStatus(user: Actor, id: string, next: OrderStatusNam
   });
   if (!order) throw new AppError(404, "ORDER_NOT_FOUND", "Order not found.");
 
-  if (order.status === next) return loadOrder(user.shopId, id);
+  if (order.status === next) return loadOrder(user, id);
 
-  if (!allowedNextStatuses(order.status, order.paymentStatus).includes(next)) {
-    const cancellable = order.status !== "COMPLETED" && order.status !== "CANCELLED";
-    if (next === "CANCELLED" && cancellable && order.paymentStatus !== "UNPAID") {
+  if (!allowedNextStatuses(order.status, order.paymentStatus, canRefund(user)).includes(next)) {
+    const stillOpen = order.status !== "COMPLETED" && order.status !== "CANCELLED";
+    if (next === "CANCELLED" && stillOpen && order.paymentStatus === "PAID") {
       throw new AppError(
-        409,
-        "ORDER_PAID",
-        "This order has already been paid, so it cannot be cancelled here. Refunds are added in Step 8."
+        403,
+        "REFUND_NOT_ALLOWED",
+        "Only the owner or a manager can cancel a paid order and refund it."
       );
     }
     throw new AppError(
@@ -337,19 +346,30 @@ export async function updateStatus(user: Actor, id: string, next: OrderStatusNam
     );
   }
 
+  // Cancelling a paid order is a refund
+  const isRefund = next === "CANCELLED" && order.paymentStatus === "PAID";
+
   await prisma.$transaction(async (tx) => {
-    // Claim the change. If someone else changed this order meanwhile, nothing matches and we stop.
+    // Claim the change. If someone else changed this order meanwhile (for example it was just
+    // paid), nothing matches and we stop.
     const claimed = await tx.order.updateMany({
       where: {
         id,
         shopId: user.shopId,
         status: order.status,
-        ...(next === "CANCELLED" ? { paymentStatus: "UNPAID" as const } : {}),
+        ...(next === "CANCELLED" ? { paymentStatus: order.paymentStatus } : {}),
       },
-      data: { status: next },
+      data: { status: next, ...(isRefund ? { paymentStatus: "REFUNDED" as const } : {}) },
     });
     if (claimed.count === 0) {
       throw new AppError(409, "ORDER_CHANGED", "This order was just changed by someone else. Please check it again.");
+    }
+
+    if (isRefund) {
+      await tx.payment.updateMany({
+        where: { orderId: id, refundedAt: null },
+        data: { refundedAt: new Date() },
+      });
     }
 
     if (next === "CANCELLED") {
@@ -384,7 +404,7 @@ export async function updateStatus(user: Actor, id: string, next: OrderStatusNam
     {
       shopId: user.shopId,
       userId: user.id,
-      action: next === "CANCELLED" ? "ORDER_CANCELLED" : "ORDER_STATUS_CHANGED",
+      action: isRefund ? "ORDER_REFUNDED" : next === "CANCELLED" ? "ORDER_CANCELLED" : "ORDER_STATUS_CHANGED",
       entity: "order",
       entityId: id,
       details: { orderNo: order.orderNo, from: order.status, to: next },
@@ -392,5 +412,5 @@ export async function updateStatus(user: Actor, id: string, next: OrderStatusNam
     ctx
   );
 
-  return loadOrder(user.shopId, id);
+  return loadOrder(user, id);
 }

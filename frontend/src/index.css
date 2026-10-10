@@ -14,3 +14,26 @@ body {
   color: #1a1a1a;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
+
+/* Receipt printing: only the receipt is printed, never the app around it */
+#print-receipt {
+  display: none;
+}
+
+@media print {
+  #root {
+    display: none !important;
+  }
+  #print-receipt {
+    display: block !important;
+  }
+  html,
+  body {
+    background: #fff !important;
+    margin: 0;
+    padding: 0;
+  }
+  @page {
+    margin: 0;
+  }
+}

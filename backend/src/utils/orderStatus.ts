@@ -10,15 +10,23 @@ const FORWARD: Record<OrderStatusName, OrderStatusName[]> = {
   CANCELLED: [],
 };
 
-// A paid order cannot be cancelled here: it would need a refund (added with payments in Step 8).
-export function allowedNextStatuses(status: OrderStatusName, paymentStatus: PaymentStatusName): OrderStatusName[] {
-  return FORWARD[status].filter((next) => next !== "CANCELLED" || paymentStatus === "UNPAID");
+// An unpaid order can always be cancelled. A paid one can only be cancelled (and refunded)
+// by someone allowed to refund: the owner or a manager.
+export function allowedNextStatuses(
+  status: OrderStatusName,
+  paymentStatus: PaymentStatusName,
+  canRefund = false
+): OrderStatusName[] {
+  return FORWARD[status].filter(
+    (next) => next !== "CANCELLED" || paymentStatus === "UNPAID" || (paymentStatus === "PAID" && canRefund)
+  );
 }
 
 export function canChangeStatus(
   from: OrderStatusName,
   to: OrderStatusName,
-  paymentStatus: PaymentStatusName
+  paymentStatus: PaymentStatusName,
+  canRefund = false
 ): boolean {
-  return allowedNextStatuses(from, paymentStatus).includes(to);
+  return allowedNextStatuses(from, paymentStatus, canRefund).includes(to);
 }

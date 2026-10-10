@@ -6,9 +6,14 @@ describe("order status rules", () => {
     expect(allowedNextStatuses("PENDING", "UNPAID")).toEqual(["PREPARING", "READY", "COMPLETED", "CANCELLED"]);
   });
 
-  it("does not offer cancel for a paid order", () => {
+  it("does not offer cancel for a paid order unless the person may refund", () => {
     expect(allowedNextStatuses("PENDING", "PAID")).toEqual(["PREPARING", "READY", "COMPLETED"]);
     expect(canChangeStatus("READY", "CANCELLED", "PAID")).toBe(false);
+    expect(canChangeStatus("READY", "CANCELLED", "PAID", true)).toBe(true);
+  });
+
+  it("never offers cancel for an order that is already refunded", () => {
+    expect(allowedNextStatuses("PENDING", "REFUNDED", true)).not.toContain("CANCELLED");
   });
 
   it("never moves backwards", () => {
@@ -21,10 +26,10 @@ describe("order status rules", () => {
     expect(canChangeStatus("PENDING", "COMPLETED", "PAID")).toBe(true);
   });
 
-  it("treats completed and cancelled as final", () => {
+  it("treats completed and cancelled as final, even for refunds", () => {
     for (const payment of ["UNPAID", "PAID", "REFUNDED"] as const) {
-      expect(allowedNextStatuses("COMPLETED", payment)).toEqual([]);
-      expect(allowedNextStatuses("CANCELLED", payment)).toEqual([]);
+      expect(allowedNextStatuses("COMPLETED", payment, true)).toEqual([]);
+      expect(allowedNextStatuses("CANCELLED", payment, true)).toEqual([]);
     }
   });
 });

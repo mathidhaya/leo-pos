@@ -56,8 +56,10 @@ export interface OrderDetail {
   tax: string;
   deliveryCharge: string;
   grandTotal: string;
-  payments: Array<{ method: PaymentMethod; amount: string }>;
+  payments: Array<{ method: PaymentMethod; amount: string; refundedAt: string | null }>;
+  invoiceId: string | null;
   invoiceNo: string | null;
-  // The server decides which status changes are allowed
+  // The server decides what this person may do
+  canPay: boolean;
   actions: OrderStatus[];
 }

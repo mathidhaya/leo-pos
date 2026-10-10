@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getOrder, updateOrderStatus } from "../../api/orders";
+import { useAuth } from "../../hooks/useAuth";
 import type { OrderStatus } from "../../types/orders";
 import { getErrorMessage } from "../../utils/errors";
 import { formatDateTime, formatMoney, formatOrderNo } from "../../utils/format";
 import { ACTION_LABEL, METHOD_LABEL, TYPE_LABEL } from "../../utils/orderLabels";
+import InvoiceModal from "../invoices/InvoiceModal";
+import PaymentModal from "../payments/PaymentModal";
 import Alert from "../ui/Alert";
 import Button from "../ui/Button";
 import ConfirmDialog from "../ui/ConfirmDialog";
@@ -18,6 +21,9 @@ interface Props {
 
 export default function OrderDetailModal({ orderId, onClose }: Props) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const canHandleMoney = user?.role === "OWNER" || user?.role === "CASHIER";
+
   const { data: order, isPending, isError, error, refetch } = useQuery({
     queryKey: ["order", orderId],
     queryFn: () => getOrder(orderId),
@@ -26,13 +32,14 @@ export default function OrderDetailModal({ orderId, onClose }: Props) {
   const [busy, setBusy] = useState<OrderStatus | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [showInvoice, setShowInvoice] = useState(false);
 
-  // Orders, stock (the order screen) and the dashboard can all change when a status changes
+  // Orders, stock (the order screen), payments, invoices and the dashboard can all change
   function refreshEverything() {
-    void queryClient.invalidateQueries({ queryKey: ["orders"] });
-    void queryClient.invalidateQueries({ queryKey: ["order", orderId] });
-    void queryClient.invalidateQueries({ queryKey: ["pos-catalog"] });
-    void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    for (const key of ["orders", "order", "pos-catalog", "dashboard", "payments", "invoices"]) {
+      void queryClient.invalidateQueries({ queryKey: [key] });
+    }
   }
 
   async function changeStatus(status: OrderStatus) {
@@ -50,18 +57,18 @@ export default function OrderDetailModal({ orderId, onClose }: Props) {
 
   const forward = order ? order.actions.filter((action) => action !== "CANCELLED") : [];
   const canCancel = order ? order.actions.includes("CANCELLED") : false;
-  const paidAndOpen =
-    order !== undefined &&
-    order.paymentStatus !== "UNPAID" &&
-    order.status !== "COMPLETED" &&
-    order.status !== "CANCELLED";
+  const isPaid = order?.paymentStatus === "PAID";
+  const stillOpen = order !== undefined && order.status !== "COMPLETED" && order.status !== "CANCELLED";
+  const paymentLabel =
+    order?.paymentStatus === "UNPAID" ? "Unpaid" : order?.paymentStatus === "PAID" ? "Paid" : "Refunded";
+  const shownPayment = order?.payments[0];
 
   return (
     <>
       <Modal
         title={order ? `Order ${formatOrderNo(order.orderNo)}` : "Order"}
         onClose={onClose}
-        busy={busy !== null || confirmCancel}
+        busy={busy !== null || confirmCancel || paying || showInvoice}
         wide
       >
         {isPending && <p className="py-10 text-center text-sm text-gray-500">Loading order...</p>}
@@ -84,8 +91,8 @@ export default function OrderDetailModal({ orderId, onClose }: Props) {
                   order.paymentStatus === "UNPAID" ? "bg-amber-100 text-amber-800" : "bg-leo-100 text-leo-700"
                 }`}
               >
-                {order.paymentStatus === "UNPAID" ? "Unpaid" : order.paymentStatus === "PAID" ? "Paid" : "Refunded"}
-                {order.payments[0] ? ` · ${METHOD_LABEL[order.payments[0].method]}` : ""}
+                {paymentLabel}
+                {shownPayment ? ` · ${METHOD_LABEL[shownPayment.method]}` : ""}
               </span>
               <span className="text-sm text-gray-500">{formatDateTime(order.createdAt)}</span>
             </div>
@@ -168,45 +175,61 @@ export default function OrderDetailModal({ orderId, onClose }: Props) {
               </div>
             </dl>
 
-            {paidAndOpen && (
+            {isPaid && stillOpen && !canCancel && (
               <p className="rounded-xl bg-gray-50 px-4 py-3 text-xs text-gray-600">
-                This order is paid, so it cannot be cancelled here. Refunds are added with payments in Step 8.
+                This order is paid. Only the owner or a manager can cancel it and refund the customer.
               </p>
             )}
 
-            {(forward.length > 0 || canCancel) && (
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
-                {canCancel && (
-                  <Button variant="secondary" className="text-red-600" onClick={() => setConfirmCancel(true)} disabled={busy !== null}>
-                    Cancel order
-                  </Button>
-                )}
-                {forward.map((action, index) => (
-                  <Button
-                    key={action}
-                    variant={index === 0 ? "primary" : "secondary"}
-                    loading={busy === action}
-                    disabled={busy !== null && busy !== action}
-                    onClick={() => void changeStatus(action)}
-                  >
-                    {ACTION_LABEL[action]}
-                  </Button>
-                ))}
-              </div>
-            )}
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
+              {canCancel && (
+                <Button variant="secondary" className="text-red-600" onClick={() => setConfirmCancel(true)} disabled={busy !== null}>
+                  {isPaid ? "Cancel and refund" : "Cancel order"}
+                </Button>
+              )}
+              {order.invoiceId && canHandleMoney && (
+                <Button variant="secondary" onClick={() => setShowInvoice(true)} disabled={busy !== null}>
+                  View / print invoice
+                </Button>
+              )}
+              {forward.map((action) => (
+                <Button
+                  key={action}
+                  variant="secondary"
+                  loading={busy === action}
+                  disabled={busy !== null && busy !== action}
+                  onClick={() => void changeStatus(action)}
+                >
+                  {ACTION_LABEL[action]}
+                </Button>
+              ))}
+              {order.canPay && canHandleMoney && (
+                <Button onClick={() => setPaying(true)} disabled={busy !== null}>
+                  Take payment · {formatMoney(order.grandTotal)}
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </Modal>
 
       {confirmCancel && order && (
         <ConfirmDialog
-          title="Cancel order"
-          confirmLabel="Cancel order"
+          title={isPaid ? "Cancel and refund" : "Cancel order"}
+          confirmLabel={isPaid ? "Cancel and refund" : "Cancel order"}
           message={
-            <>
-              Cancel order <strong>{formatOrderNo(order.orderNo)}</strong>? The items go back into stock. This cannot be
-              undone.
-            </>
+            isPaid ? (
+              <>
+                Cancel order <strong>{formatOrderNo(order.orderNo)}</strong> and refund{" "}
+                <strong>{formatMoney(order.grandTotal)}</strong>? The payment is marked as refunded and the items go
+                back into stock. Hand the money back to the customer yourself. This cannot be undone.
+              </>
+            ) : (
+              <>
+                Cancel order <strong>{formatOrderNo(order.orderNo)}</strong>? The items go back into stock. This cannot
+                be undone.
+              </>
+            )
           }
           onConfirm={async () => {
             await updateOrderStatus(orderId, "CANCELLED");
@@ -215,6 +238,21 @@ export default function OrderDetailModal({ orderId, onClose }: Props) {
           }}
           onCancel={() => setConfirmCancel(false)}
         />
+      )}
+
+      {paying && order && (
+        <PaymentModal
+          order={{ id: order.id, orderNo: order.orderNo, total: order.grandTotal }}
+          onClose={() => setPaying(false)}
+          onDone={() => {
+            setPaying(false);
+            refreshEverything();
+          }}
+        />
+      )}
+
+      {showInvoice && order?.invoiceId && (
+        <InvoiceModal invoiceId={order.invoiceId} onClose={() => setShowInvoice(false)} />
       )}
     </>
   );

@@ -55,7 +55,7 @@ function PosScreen({ userId }: { userId: string }) {
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
   const [placing, setPlacing] = useState(false);
   const [placeError, setPlaceError] = useState<string | null>(null);
-  const [placed, setPlaced] = useState<{ orderNo: number; total: string } | null>(null);
+  const [placed, setPlaced] = useState<{ id: string; orderNo: number; total: string } | null>(null);
 
   const catalogQuery = useQuery({
     queryKey: ["pos-catalog"],
@@ -278,7 +278,7 @@ function PosScreen({ userId }: { userId: string }) {
       setCartOpen(false);
       setQuote(null);
       setIdempotencyKey(null);
-      setPlaced({ orderNo: order.orderNo, total: order.grandTotal });
+      setPlaced({ id: order.id, orderNo: order.orderNo, total: order.grandTotal });
 
       // Stock, the orders list and the dashboard have all changed
       void queryClient.invalidateQueries({ queryKey: ["pos-catalog"] });
@@ -426,7 +426,7 @@ function PosScreen({ userId }: { userId: string }) {
         />
       )}
 
-      {placed && <OrderPlacedModal orderNo={placed.orderNo} total={placed.total} onClose={() => setPlaced(null)} />}
+      {placed && <OrderPlacedModal orderId={placed.id} orderNo={placed.orderNo} total={placed.total} onClose={() => setPlaced(null)} />}
 
       {confirmClear && (
         <ConfirmDialog

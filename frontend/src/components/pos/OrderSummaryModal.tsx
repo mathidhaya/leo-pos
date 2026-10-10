@@ -76,8 +76,8 @@ export default function OrderSummaryModal({ quote, details, warning, error, plac
         </dl>
 
         <p className="rounded-xl border border-dashed border-gray-300 p-3 text-xs text-gray-600">
-          Prices, GST and stock were checked by the server just now. The order is saved as <strong>Unpaid</strong>.
-          Taking payment and printing the invoice come in Step 8.
+          Prices, GST and stock were checked by the server just now. The order is saved first, then you take payment.
+          Cash change and the invoice are handled right after.
         </p>
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
