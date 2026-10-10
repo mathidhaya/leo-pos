@@ -6,6 +6,7 @@ import { env } from "./config/env";
 import { prisma } from "./config/db";
 import { errorHandler, notFound } from "./middleware/errorHandler";
 import { authRouter } from "./routes/auth.routes";
+import { dashboardRouter } from "./routes/dashboard.routes";
 
 export const app = express();
 
@@ -35,6 +36,7 @@ app.get("/api/v1/health/db", async (_req, res, next) => {
 });
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/dashboard", dashboardRouter);
 
 // These two must stay LAST
 app.use(notFound);
