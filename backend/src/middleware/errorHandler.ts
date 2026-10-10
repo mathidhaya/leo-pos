@@ -33,6 +33,21 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
+  // File upload problems (for example a file that is too large)
+  if (err?.name === "MulterError") {
+    const tooBig = err.code === "LIMIT_FILE_SIZE";
+    res.status(400).json({
+      success: false,
+      error: {
+        code: tooBig ? "IMAGE_TOO_LARGE" : "UPLOAD_ERROR",
+        message: tooBig
+          ? "The image is too large. The maximum size is 2 MB."
+          : "The image could not be uploaded. Please try again.",
+      },
+    });
+    return;
+  }
+
   if (err?.type === "entity.parse.failed") {
     res.status(400).json({
       success: false,

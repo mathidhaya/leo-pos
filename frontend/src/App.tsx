@@ -7,12 +7,14 @@ import AppLayout from "./layouts/AppLayout";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+import CategoriesPage from "./pages/categories/CategoriesPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import ProductsPage from "./pages/products/ProductsPage";
 
-// Pages that are not built yet. Each one is limited to the roles that may see it.
-// When a phase builds a real page, it replaces the matching entry here.
+// Pages that are not built yet. When a phase builds a real page, its navigation entry
+// loses its "phase" number and the page gets its own route below.
 const placeholderItems = NAV_ITEMS.filter((item) => item.phase !== undefined);
 
 export default function App() {
@@ -29,6 +31,11 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+
+              <Route element={<ProtectedRoute roles={["OWNER", "MANAGER"]} />}>
+                <Route path="/products" element={<ProductsPage />} />
+                <Route path="/categories" element={<CategoriesPage />} />
+              </Route>
 
               {placeholderItems.map((item) => (
                 <Route key={item.path} element={<ProtectedRoute roles={item.roles} />}>
