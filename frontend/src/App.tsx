@@ -10,6 +10,7 @@ import RegisterPage from "./pages/auth/RegisterPage";
 import CategoriesPage from "./pages/categories/CategoriesPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
+import InventoryPage from "./pages/inventory/InventoryPage";
 import InvoicesPage from "./pages/invoices/InvoicesPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import OrdersPage from "./pages/orders/OrdersPage";
@@ -46,6 +47,7 @@ export default function App() {
               <Route element={<ProtectedRoute roles={["OWNER", "MANAGER"]} />}>
                 <Route path="/products" element={<ProductsPage />} />
                 <Route path="/categories" element={<CategoriesPage />} />
+                <Route path="/inventory" element={<InventoryPage />} />
               </Route>
 
               {placeholderItems.map((item) => (

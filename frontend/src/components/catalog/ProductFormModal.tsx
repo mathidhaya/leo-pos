@@ -169,7 +169,7 @@ export default function ProductFormModal({ product, categories, onClose, onSaved
               <div className="flex h-12 items-center rounded-xl bg-gray-50 px-4 text-base font-semibold text-gray-900">
                 {product.stock.quantity}
               </div>
-              <p className="mt-1.5 text-xs text-gray-500">To change stock, use Inventory (coming in Phase 9).</p>
+              <p className="mt-1.5 text-xs text-gray-500">To change stock, use the Inventory page.</p>
             </div>
           ) : (
             <TextField
