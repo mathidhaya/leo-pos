@@ -37,7 +37,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Customers", path: "/customers", icon: Users, roles: ALL },
   { label: "Payments", path: "/payments", icon: Wallet, roles: ["OWNER", "CASHIER"] },
   { label: "Invoices", path: "/invoices", icon: Receipt, roles: ["OWNER", "CASHIER"] },
-  { label: "Reports", path: "/reports", icon: TrendingUp, roles: ["OWNER", "MANAGER"], phase: 11 },
+  { label: "Reports", path: "/reports", icon: TrendingUp, roles: ["OWNER", "MANAGER"] },
   { label: "Staff", path: "/staff", icon: UserCog, roles: ["OWNER"], phase: 12 },
   { label: "Settings", path: "/settings", icon: Settings, roles: ["OWNER"], phase: 13 },
 ];
