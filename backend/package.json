@@ -15,7 +15,6 @@
     "db:studio": "prisma studio",
     "db:sample-orders": "tsx prisma/sample-orders.ts generate",
     "db:sample-orders:clear": "tsx prisma/sample-orders.ts clear",
-    "db:dev-users": "tsx prisma/dev-users.ts",
     "test:watch": "vitest"
   },
   "keywords": [],

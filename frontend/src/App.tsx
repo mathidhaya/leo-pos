@@ -19,6 +19,7 @@ import PaymentsPage from "./pages/payments/PaymentsPage";
 import PosPage from "./pages/pos/PosPage";
 import ProductsPage from "./pages/products/ProductsPage";
 import ReportsPage from "./pages/reports/ReportsPage";
+import StaffPage from "./pages/staff/StaffPage";
 
 // Pages that are not built yet. When a phase builds a real page, its navigation entry
 // loses its "phase" number and the page gets its own route below.
@@ -52,6 +53,10 @@ export default function App() {
                 <Route path="/categories" element={<CategoriesPage />} />
                 <Route path="/inventory" element={<InventoryPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
+              </Route>
+
+              <Route element={<ProtectedRoute roles={["OWNER"]} />}>
+                <Route path="/staff" element={<StaffPage />} />
               </Route>
 
               {placeholderItems.map((item) => (

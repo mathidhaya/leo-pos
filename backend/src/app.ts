@@ -17,6 +17,7 @@ import { paymentRouter } from "./routes/payment.routes";
 import { posRouter } from "./routes/pos.routes";
 import { productRouter } from "./routes/product.routes";
 import { reportRouter } from "./routes/report.routes";
+import { staffRouter } from "./routes/staff.routes";
 import { uploadRouter } from "./routes/upload.routes";
 
 export const app = express();
@@ -68,6 +69,7 @@ app.use("/api/v1/invoices", invoiceRouter);
 app.use("/api/v1/inventory", inventoryRouter);
 app.use("/api/v1/customers", customerRouter);
 app.use("/api/v1/reports", reportRouter);
+app.use("/api/v1/staff", staffRouter);
 
 // These two must stay LAST
 app.use(notFound);
