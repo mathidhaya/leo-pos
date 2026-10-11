@@ -37,7 +37,7 @@ export default function OrderDetailModal({ orderId, onClose }: Props) {
 
   // Orders, stock (the order screen), payments, invoices and the dashboard can all change
   function refreshEverything() {
-    for (const key of ["orders", "order", "pos-catalog", "dashboard", "payments", "invoices"]) {
+    for (const key of ["orders", "order", "pos-catalog", "dashboard", "payments", "invoices", "customers", "customer", "customer-orders"]) {
       void queryClient.invalidateQueries({ queryKey: [key] });
     }
   }

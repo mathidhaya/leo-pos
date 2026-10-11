@@ -9,6 +9,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import CategoriesPage from "./pages/categories/CategoriesPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
+import CustomersPage from "./pages/customers/CustomersPage";
 import DashboardPage from "./pages/dashboard/DashboardPage";
 import InventoryPage from "./pages/inventory/InventoryPage";
 import InvoicesPage from "./pages/invoices/InvoicesPage";
@@ -37,6 +38,7 @@ export default function App() {
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/customers" element={<CustomersPage />} />
 
               <Route element={<ProtectedRoute roles={["OWNER", "CASHIER"]} />}>
                 <Route path="/pos" element={<PosPage />} />

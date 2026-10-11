@@ -57,7 +57,7 @@ export default function PaymentModal({ order, onClose, onDone }: Props) {
   const receivedPaise = parseMoneyToPaise(received);
 
   function refresh() {
-    for (const key of ["orders", "order", "dashboard", "payments", "invoices"]) {
+    for (const key of ["orders", "order", "dashboard", "payments", "invoices", "customers", "customer", "customer-orders"]) {
       void queryClient.invalidateQueries({ queryKey: [key] });
     }
   }

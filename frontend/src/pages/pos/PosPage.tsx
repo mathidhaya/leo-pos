@@ -284,6 +284,7 @@ function PosScreen({ userId }: { userId: string }) {
       void queryClient.invalidateQueries({ queryKey: ["pos-catalog"] });
       void queryClient.invalidateQueries({ queryKey: ["orders"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      void queryClient.invalidateQueries({ queryKey: ["customers"] });
     } catch (err) {
       setPlaceError(getErrorMessage(err));
       const code = getErrorCode(err);

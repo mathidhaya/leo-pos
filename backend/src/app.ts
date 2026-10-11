@@ -8,6 +8,7 @@ import { UPLOAD_DIR } from "./config/uploads";
 import { errorHandler, notFound } from "./middleware/errorHandler";
 import { authRouter } from "./routes/auth.routes";
 import { categoryRouter } from "./routes/category.routes";
+import { customerRouter } from "./routes/customer.routes";
 import { dashboardRouter } from "./routes/dashboard.routes";
 import { inventoryRouter } from "./routes/inventory.routes";
 import { invoiceRouter } from "./routes/invoice.routes";
@@ -64,6 +65,7 @@ app.use("/api/v1/orders", orderRouter);
 app.use("/api/v1/payments", paymentRouter);
 app.use("/api/v1/invoices", invoiceRouter);
 app.use("/api/v1/inventory", inventoryRouter);
+app.use("/api/v1/customers", customerRouter);
 
 // These two must stay LAST
 app.use(notFound);
