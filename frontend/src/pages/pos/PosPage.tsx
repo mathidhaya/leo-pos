@@ -13,6 +13,7 @@ import Button from "../../components/ui/Button";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import Modal from "../../components/ui/Modal";
 import { useAuth } from "../../hooks/useAuth";
+import { useAppSettings } from "../../hooks/useAppSettings";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { usePosCart } from "../../hooks/usePosCart";
 import type { PosProduct, Quote } from "../../types/pos";
@@ -65,6 +66,11 @@ function PosScreen({ userId }: { userId: string }) {
     refetchInterval: 60_000,
   });
   const catalog = catalogQuery.data;
+
+  // The default discount from Settings is filled in when a new order gets its first item
+  const appSettings = useAppSettings();
+  const defaultDiscountNumber = Number(appSettings.data?.defaultDiscount ?? 0);
+  const defaultDiscount = defaultDiscountNumber > 0 ? String(defaultDiscountNumber) : "";
 
   const productsById = useMemo(
     () => new Map((catalog?.products ?? []).map((product) => [product.id, product] as const)),
@@ -176,6 +182,10 @@ function PosScreen({ userId }: { userId: string }) {
     }
 
     setNotice(null);
+    if (cart.items.length === 0 && cart.discountValue.trim() === "" && defaultDiscount) {
+      dispatch({ type: "setDiscountKind", kind: "percent" });
+      dispatch({ type: "setText", field: "discountValue", value: defaultDiscount });
+    }
     dispatch({ type: "add", productId: product.id, limit });
   }
 

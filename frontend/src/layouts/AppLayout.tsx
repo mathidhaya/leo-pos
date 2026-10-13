@@ -2,15 +2,32 @@ import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { Coffee, LogOut, Menu, X } from "lucide-react";
 import { NAV_ITEMS } from "../config/navigation";
+import { useAppSettings } from "../hooks/useAppSettings";
 import { useAuth } from "../hooks/useAuth";
 import { ROLE_LABEL } from "../utils/roles";
 
+// The cafe's logo, or the coffee cup when there is none
+function Logo({ url, className }: { url: string | null | undefined; className: string }) {
+  return url ? (
+    <img src={url} alt="" className={`${className} object-cover`} />
+  ) : (
+    <span className={`${className} flex items-center justify-center bg-leo-600 text-white`}>
+      <Coffee className="h-5 w-5" />
+    </span>
+  );
+}
+
 export default function AppLayout() {
   const { user, logout } = useAuth();
+  const { data: app } = useAppSettings();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
   if (!user) return null;
+
+  // The live values win, so a new cafe name or your own new name shows without logging in again
+  const cafeName = app?.shopName ?? user.shop.name;
+  const personName = app?.userName || user.name;
 
   const items = NAV_ITEMS.filter((item) => item.roles.includes(user.role));
 
@@ -37,11 +54,9 @@ export default function AppLayout() {
         ].join(" ")}
       >
         <div className="flex h-16 items-center justify-between px-5">
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-leo-600 text-white">
-              <Coffee className="h-5 w-5" />
-            </span>
-            <span className="text-lg font-bold text-leo-700">Leo Cafe</span>
+          <div className="flex min-w-0 items-center gap-2">
+            <Logo url={app?.logoUrl} className="h-9 w-9 shrink-0 rounded-lg" />
+            <span className="truncate text-lg font-bold text-leo-700">{cafeName}</span>
           </div>
           <button
             type="button"
@@ -73,9 +88,9 @@ export default function AppLayout() {
         </nav>
 
         <div className="border-t border-gray-200 p-4">
-          <p className="truncate text-sm font-semibold text-gray-900">{user.name}</p>
+          <p className="truncate text-sm font-semibold text-gray-900">{personName}</p>
           <p className="truncate text-xs text-gray-500">
-            {ROLE_LABEL[user.role]} &middot; {user.shop.name}
+            {ROLE_LABEL[user.role]} &middot; {cafeName}
           </p>
           <button
             type="button"
@@ -99,7 +114,7 @@ export default function AppLayout() {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <span className="font-bold text-leo-700">Leo Cafe</span>
+          <span className="truncate font-bold text-leo-700">{cafeName}</span>
         </header>
 
         <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:py-8">

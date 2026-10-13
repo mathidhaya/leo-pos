@@ -39,5 +39,5 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Invoices", path: "/invoices", icon: Receipt, roles: ["OWNER", "CASHIER"] },
   { label: "Reports", path: "/reports", icon: TrendingUp, roles: ["OWNER", "MANAGER"] },
   { label: "Staff", path: "/staff", icon: UserCog, roles: ["OWNER"] },
-  { label: "Settings", path: "/settings", icon: Settings, roles: ["OWNER"], phase: 13 },
+  { label: "Settings", path: "/settings", icon: Settings, roles: ALL },
 ];

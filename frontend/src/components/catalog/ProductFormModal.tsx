@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createProduct, updateProduct } from "../../api/products";
+import { useDefaultGst } from "../../hooks/useAppSettings";
 import type { Category, Product } from "../../types/catalog";
 import { productFormSchema, type ProductFormValues } from "../../utils/catalogValidation";
 import { getErrorMessage } from "../../utils/errors";
@@ -32,6 +33,7 @@ export default function ProductFormModal({ product, categories, onClose, onSaved
   const isEdit = product !== null;
   const [imageUrl, setImageUrl] = useState<string | null>(product?.imageUrl ?? null);
   const [uploading, setUploading] = useState(false);
+  const defaultGst = useDefaultGst();
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -49,7 +51,7 @@ export default function ProductFormModal({ product, categories, onClose, onSaved
       description: product?.description ?? "",
       sellingPrice: product?.sellingPrice ?? "",
       costPrice: product?.costPrice ?? "",
-      gstPercent: product ? String(Number(product.gstPercent)) : "5",
+      gstPercent: product ? String(Number(product.gstPercent)) : defaultGst,
       stockQuantity: product ? String(product.stock.quantity) : "0",
       minStock: product ? String(product.stock.minStock) : "10",
       prepTimeMin: product?.prepTimeMin === null || product === null ? "" : String(product.prepTimeMin),

@@ -6,6 +6,7 @@ import { env } from "./config/env";
 import { prisma } from "./config/db";
 import { UPLOAD_DIR } from "./config/uploads";
 import { errorHandler, notFound } from "./middleware/errorHandler";
+import { accountRouter } from "./routes/account.routes";
 import { authRouter } from "./routes/auth.routes";
 import { categoryRouter } from "./routes/category.routes";
 import { customerRouter } from "./routes/customer.routes";
@@ -17,6 +18,7 @@ import { paymentRouter } from "./routes/payment.routes";
 import { posRouter } from "./routes/pos.routes";
 import { productRouter } from "./routes/product.routes";
 import { reportRouter } from "./routes/report.routes";
+import { settingsRouter } from "./routes/settings.routes";
 import { staffRouter } from "./routes/staff.routes";
 import { uploadRouter } from "./routes/upload.routes";
 
@@ -70,6 +72,8 @@ app.use("/api/v1/inventory", inventoryRouter);
 app.use("/api/v1/customers", customerRouter);
 app.use("/api/v1/reports", reportRouter);
 app.use("/api/v1/staff", staffRouter);
+app.use("/api/v1/settings", settingsRouter);
+app.use("/api/v1/account", accountRouter);
 
 // These two must stay LAST
 app.use(notFound);

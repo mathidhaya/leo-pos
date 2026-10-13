@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Printer } from "lucide-react";
 import { downloadInvoicePdf, getInvoice } from "../../api/invoices";
+import { useAppSettings } from "../../hooks/useAppSettings";
 import { getErrorMessage } from "../../utils/errors";
 import Alert from "../ui/Alert";
 import Button from "../ui/Button";
@@ -22,6 +23,8 @@ export default function InvoiceModal({ invoiceId, onClose }: Props) {
     staleTime: 60_000,
   });
 
+  const appSettings = useAppSettings();
+  const printerName = appSettings.data?.printerName;
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
@@ -67,7 +70,7 @@ export default function InvoiceModal({ invoiceId, onClose }: Props) {
             </div>
 
             <p className="text-center text-xs text-gray-500">
-              For a receipt printer, choose it in the print window and set the paper size to 80 mm.
+              {printerName ? 'Choose "' + printerName + '" in the print window and set the paper size to 80 mm.' : "For a receipt printer, choose it in the print window and set the paper size to 80 mm."}
             </p>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">

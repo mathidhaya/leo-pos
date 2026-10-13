@@ -19,6 +19,7 @@ import PaymentsPage from "./pages/payments/PaymentsPage";
 import PosPage from "./pages/pos/PosPage";
 import ProductsPage from "./pages/products/ProductsPage";
 import ReportsPage from "./pages/reports/ReportsPage";
+import SettingsPage from "./pages/settings/SettingsPage";
 import StaffPage from "./pages/staff/StaffPage";
 
 // Pages that are not built yet. When a phase builds a real page, its navigation entry
@@ -41,6 +42,8 @@ export default function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/customers" element={<CustomersPage />} />
+              {/* Every role can open Settings. Cafe, billing and receipt are shown to the owner only. */}
+              <Route path="/settings" element={<SettingsPage />} />
 
               <Route element={<ProtectedRoute roles={["OWNER", "CASHIER"]} />}>
                 <Route path="/pos" element={<PosPage />} />

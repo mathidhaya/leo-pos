@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import * as authApi from "../api/auth";
 import { refreshSession, setSessionExpiredHandler } from "../api/client";
 import { setAccessToken } from "../api/tokenStore";
@@ -7,6 +8,7 @@ import { clearPosDraft } from "../utils/posDraft";
 import { AuthContext, type AuthContextValue, type AuthStatus } from "./authContext";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [status, setStatus] = useState<AuthStatus>("loading");
 
@@ -14,7 +16,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
     setUser(null);
     setStatus("unauthenticated");
-  }, []);
+    // Whatever was on screen (sales, profit, customers) must not be shown to the next person who logs in
+    queryClient.clear();
+  }, [queryClient]);
 
   const startSession = useCallback((session: Session) => {
     setAccessToken(session.accessToken);
