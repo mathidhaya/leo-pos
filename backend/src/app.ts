@@ -6,6 +6,7 @@ import { env } from "./config/env";
 import { prisma } from "./config/db";
 import { UPLOAD_DIR } from "./config/uploads";
 import { errorHandler, notFound } from "./middleware/errorHandler";
+import { apiLimiter, noStore } from "./middleware/security";
 import { accountRouter } from "./routes/account.routes";
 import { authRouter } from "./routes/auth.routes";
 import { categoryRouter } from "./routes/category.routes";
@@ -24,8 +25,36 @@ import { uploadRouter } from "./routes/upload.routes";
 
 export const app = express();
 
-app.use(helmet());
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+// Behind a reverse proxy this makes rate limits see each visitor's real address (see TRUST_PROXY)
+app.set("trust proxy", env.TRUST_PROXY);
+app.disable("x-powered-by");
+
+// This server only sends data and images, never web pages, so nothing on it may load anything else
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'none'"],
+        baseUri: ["'none'"],
+        formAction: ["'none'"],
+        frameAncestors: ["'none'"],
+      },
+    },
+  })
+);
+
+// Only our own website may read responses. Other sites get no CORS headers at all.
+app.use(
+  cors({
+    origin: (origin, callback) => callback(null, !origin || origin === env.CORS_ORIGIN),
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    maxAge: 600,
+  })
+);
+
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
@@ -39,23 +68,26 @@ app.use(
   express.static(UPLOAD_DIR, { maxAge: "7d", immutable: true, index: false, dotfiles: "deny" })
 );
 
+// Everything under /api is limited, and never stored by the browser
+app.use("/api", apiLimiter, noStore);
+
 app.get("/api/v1/health", (_req, res) => {
   res.json({
     success: true,
-    data: {
-      status: "ok",
-      service: "leo-pos-api",
-      time: new Date().toISOString(),
-    },
+    data: { status: "ok", service: "leo-pos-api", time: new Date().toISOString() },
   });
 });
 
-app.get("/api/v1/health/db", async (_req, res, next) => {
+// Says only whether the database answers. It no longer reveals how much data there is.
+app.get("/api/v1/health/db", async (_req, res) => {
   try {
-    const [shops, products] = await Promise.all([prisma.shop.count(), prisma.product.count()]);
-    res.json({ success: true, data: { database: "connected", shops, products } });
-  } catch (err) {
-    next(err);
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ success: true, data: { database: "connected" } });
+  } catch {
+    res.status(503).json({
+      success: false,
+      error: { code: "DB_UNAVAILABLE", message: "The database is not reachable." },
+    });
   }
 });
 

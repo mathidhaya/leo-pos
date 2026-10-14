@@ -15,7 +15,8 @@
     "db:studio": "prisma studio",
     "db:sample-orders": "tsx prisma/sample-orders.ts generate",
     "db:sample-orders:clear": "tsx prisma/sample-orders.ts clear",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:tenant-check": "tsx prisma/tenant-check.ts"
   },
   "keywords": [],
   "author": "",
@@ -45,7 +46,9 @@
     "@types/multer": "^2.3.0",
     "@types/node": "^26.6.4",
     "@types/pdfkit": "^0.17.6",
+    "@types/supertest": "^7.2.1",
     "prisma": "^7.10.0",
+    "supertest": "^7.3.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"

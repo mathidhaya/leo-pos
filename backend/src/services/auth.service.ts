@@ -1,3 +1,4 @@
+import { env } from "../config/env";
 import { prisma } from "../config/db";
 import type { RoleName } from "../types/auth";
 import { AppError } from "../utils/AppError";
@@ -15,12 +16,22 @@ import { deliverOtp } from "./notification.service";
 
 export type OtpPurposeName = "REGISTER" | "RESET";
 
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
 const OTP_TTL_MS = 5 * 60 * 1000;
 const OTP_MAX_ATTEMPTS = 5;
 const OTP_RESEND_COOLDOWN_MS = 30 * 1000;
 const VERIFIED_TTL_MS = 15 * 60 * 1000;
 const REFRESH_REUSE_GRACE_MS = 10 * 1000;
 const DEFAULT_CATEGORIES = ["Coffee", "Tea", "Fast Food", "Beverages", "Snacks", "Desserts"];
+
+// A 4-digit code has only 10,000 possibilities, so the number of tries is limited per phone number or
+// email address in total, not per code. Asking for a new code never gives back the tries already used.
+// At most 20 guesses a day means about a 0.2% chance of guessing right, per account per day.
+export const OTP_MAX_SENDS_PER_HOUR = 5;
+export const OTP_MAX_ATTEMPTS_PER_DAY = 20;
+const OTP_HISTORY_KEEP_MS = 2 * DAY_MS;
 
 // ---------- helpers ----------
 
@@ -30,6 +41,16 @@ function mustParse(raw: string): Identifier {
     throw new AppError(400, "INVALID_IDENTIFIER", "Please enter a valid mobile number or email.");
   }
   return id;
+}
+
+function assertRegistrationOpen(): void {
+  if (!env.ALLOW_REGISTRATION) {
+    throw new AppError(
+      403,
+      "REGISTRATION_CLOSED",
+      "New cafe registration is closed on this server. Please ask the owner to add you as staff."
+    );
+  }
 }
 
 function findUserByIdentifier(id: Identifier) {
@@ -81,6 +102,8 @@ async function createRefreshToken(userId: string, ctx: RequestContext): Promise<
 // ---------- OTP ----------
 
 export async function sendOtp(rawIdentifier: string, purpose: OtpPurposeName): Promise<void> {
+  if (purpose === "REGISTER") assertRegistrationOpen();
+
   const id = mustParse(rawIdentifier);
   const user = await findUserByIdentifier(id);
 
@@ -95,30 +118,45 @@ export async function sendOtp(rawIdentifier: string, purpose: OtpPurposeName): P
   // For password reset we answer the same way whether the account exists or not.
   if (purpose === "RESET" && (!user || !user.isActive)) return;
 
-  const recent = await prisma.otpVerification.findFirst({
-    where: {
-      identifier: id.value,
-      purpose,
-      createdAt: { gt: new Date(Date.now() - OTP_RESEND_COOLDOWN_MS) },
-    },
-  });
+  const now = Date.now();
+  const [sentLastHour, recent] = await Promise.all([
+    prisma.otpVerification.count({
+      where: { identifier: id.value, purpose, createdAt: { gt: new Date(now - HOUR_MS) } },
+    }),
+    prisma.otpVerification.findFirst({
+      where: { identifier: id.value, purpose, createdAt: { gt: new Date(now - OTP_RESEND_COOLDOWN_MS) } },
+    }),
+  ]);
+
+  // Too many codes asked for. A registration is told. A password reset stays silent, so nobody
+  // can find out which accounts exist.
+  if (sentLastHour >= OTP_MAX_SENDS_PER_HOUR) {
+    if (purpose === "RESET") return;
+    throw new AppError(
+      429,
+      "OTP_RATE_LIMITED",
+      "Too many OTP requests for this number or email. Please try again in an hour."
+    );
+  }
+
   if (recent) {
     if (purpose === "RESET") return;
     throw new AppError(429, "OTP_COOLDOWN", "Please wait 30 seconds before requesting another OTP.");
   }
 
   const otp = generateOtp();
-  await prisma.$transaction([
-    prisma.otpVerification.deleteMany({ where: { identifier: id.value, purpose } }),
-    prisma.otpVerification.create({
-      data: {
-        identifier: id.value,
-        purpose,
-        otpHash: hashOtp(id.value, purpose, otp),
-        expiresAt: new Date(Date.now() + OTP_TTL_MS),
-      },
-    }),
-  ]);
+  // Earlier codes are kept (not deleted), so the number of tries already used is remembered
+  await prisma.otpVerification.create({
+    data: {
+      identifier: id.value,
+      purpose,
+      otpHash: hashOtp(id.value, purpose, otp),
+      expiresAt: new Date(now + OTP_TTL_MS),
+    },
+  });
+
+  // Housekeeping: records older than two days are removed
+  await prisma.otpVerification.deleteMany({ where: { createdAt: { lt: new Date(now - OTP_HISTORY_KEEP_MS) } } });
 
   await deliverOtp(id, otp, purpose);
 }
@@ -129,6 +167,15 @@ export async function verifyOtp(
   otp: string
 ): Promise<{ verificationId: string }> {
   const id = mustParse(rawIdentifier);
+
+  // The tries used in the last 24 hours, over all codes sent to this number or email
+  const spent = await prisma.otpVerification.aggregate({
+    where: { identifier: id.value, purpose, createdAt: { gt: new Date(Date.now() - DAY_MS) } },
+    _sum: { attempts: true },
+  });
+  if ((spent._sum.attempts ?? 0) >= OTP_MAX_ATTEMPTS_PER_DAY) {
+    throw new AppError(429, "OTP_LOCKED", "Too many wrong attempts. Please try again tomorrow.");
+  }
 
   const row = await prisma.otpVerification.findFirst({
     where: { identifier: id.value, purpose, verifiedAt: null },
@@ -184,6 +231,8 @@ export async function register(
   },
   ctx: RequestContext
 ) {
+  assertRegistrationOpen();
+
   const id = mustParse(input.identifier);
   const verification = await requireVerification(input.verificationId, id, "REGISTER");
   const passwordHash = await hashPassword(input.password);
@@ -258,6 +307,15 @@ export async function login(rawIdentifier: string, password: string, ctx: Reques
   }
 
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+
+  // Housekeeping: sessions that can no longer be used are removed
+  await prisma.refreshToken.deleteMany({
+    where: {
+      userId: user.id,
+      OR: [{ expiresAt: { lt: new Date() } }, { revokedAt: { lt: new Date(Date.now() - 7 * DAY_MS) } }],
+    },
+  });
+
   const refreshToken = await createRefreshToken(user.id, ctx);
   await logAudit({ shopId: user.shopId, userId: user.id, action: "LOGIN" }, ctx);
 

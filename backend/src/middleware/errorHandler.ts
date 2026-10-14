@@ -48,6 +48,14 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
+  if (err?.type === "entity.too.large") {
+    res.status(413).json({
+      success: false,
+      error: { code: "PAYLOAD_TOO_LARGE", message: "The request is too large." },
+    });
+    return;
+  }
+
   if (err?.type === "entity.parse.failed") {
     res.status(400).json({
       success: false,
@@ -56,6 +64,8 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
+  // Anything unexpected is logged for us, and the person only sees a safe message.
+  // The real error (a database message, a stack trace) never leaves the server.
   console.error(err);
   res.status(500).json({
     success: false,
