@@ -1,3 +1,4 @@
+import { escapeLike } from "../utils/sql";
 import crypto from "crypto";
 import type { Prisma } from "../generated/prisma/client";
 import { prisma } from "../config/db";
@@ -97,8 +98,8 @@ export async function listProducts(user: Actor, query: ListProductsQuery) {
 
   if (query.q) {
     where.OR = [
-      { name: { contains: query.q, mode: "insensitive" } },
-      { sku: { contains: query.q, mode: "insensitive" } },
+      { name: { contains: escapeLike(query.q), mode: "insensitive" } },
+      { sku: { contains: escapeLike(query.q), mode: "insensitive" } },
     ];
   }
   if (query.categoryId) where.categoryId = query.categoryId;

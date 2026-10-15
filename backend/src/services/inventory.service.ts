@@ -1,3 +1,4 @@
+import { escapeLike } from "../utils/sql";
 import type { Prisma } from "../generated/prisma/client";
 import { prisma } from "../config/db";
 import type { RoleName } from "../types/auth";
@@ -97,8 +98,8 @@ export async function listInventory(user: Actor, query: ListInventoryQuery) {
 
   if (query.q) {
     where.OR = [
-      { name: { contains: query.q, mode: "insensitive" } },
-      { sku: { contains: query.q, mode: "insensitive" } },
+      { name: { contains: escapeLike(query.q), mode: "insensitive" } },
+      { sku: { contains: escapeLike(query.q), mode: "insensitive" } },
     ];
   }
   if (query.categoryId) where.categoryId = query.categoryId;
@@ -292,9 +293,9 @@ export async function listMovements(user: Actor, query: ListMovementsQuery) {
   }
   if (query.q) {
     where.OR = [
-      { product: { name: { contains: query.q, mode: "insensitive" } } },
-      { product: { sku: { contains: query.q, mode: "insensitive" } } },
-      { reason: { contains: query.q, mode: "insensitive" } },
+      { product: { name: { contains: escapeLike(query.q), mode: "insensitive" } } },
+      { product: { sku: { contains: escapeLike(query.q), mode: "insensitive" } } },
+      { reason: { contains: escapeLike(query.q), mode: "insensitive" } },
     ];
   }
 

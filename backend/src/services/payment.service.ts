@@ -1,3 +1,4 @@
+import { escapeLike } from "../utils/sql";
 import type { Prisma } from "../generated/prisma/client";
 import { prisma } from "../config/db";
 import type { RoleName } from "../types/auth";
@@ -130,7 +131,10 @@ export async function createPayment(user: Actor, input: CreatePaymentInput, ctx:
     return { result: toResult(row), duplicate: false };
   } catch (err) {
     // Two identical requests at the same moment: the second one gets the first one's payment
-    if (isUniqueViolation(err)) {
+    if (
+      isUniqueViolation(err) ||
+      (err instanceof AppError && (err.code === "ORDER_CHANGED" || err.code === "ALREADY_PAID"))
+    ) {
       const raced = await findKnown(user, input);
       if (raced) return { result: raced, duplicate: true };
     }
@@ -154,9 +158,9 @@ function paymentWhere(user: Actor, query: ListPaymentsQuery): Prisma.PaymentWher
     const text = query.q.replace(/^#/, "");
     const digits = query.q.replace(/\D/g, "");
     const or: Prisma.PaymentWhereInput[] = [
-      { order: { invoice: { invoiceNo: { contains: query.q, mode: "insensitive" } } } },
-      { order: { customer: { name: { contains: query.q, mode: "insensitive" } } } },
-      { order: { walkInName: { contains: query.q, mode: "insensitive" } } },
+      { order: { invoice: { invoiceNo: { contains: escapeLike(query.q), mode: "insensitive" } } } },
+      { order: { customer: { name: { contains: escapeLike(query.q), mode: "insensitive" } } } },
+      { order: { walkInName: { contains: escapeLike(query.q), mode: "insensitive" } } },
     ];
     if (/^\d{1,9}$/.test(text)) or.push({ order: { orderNo: Number(text) } });
     if (digits.length >= 3) or.push({ order: { customer: { phone: { contains: digits } } } });

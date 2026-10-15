@@ -1,3 +1,4 @@
+import { escapeLike } from "../utils/sql";
 import type { Prisma } from "../generated/prisma/client";
 import { prisma } from "../config/db";
 import type { RoleName } from "../types/auth";
@@ -98,8 +99,8 @@ export async function listStaff(user: Actor, query: ListStaffQuery) {
   if (query.q) {
     const digits = query.q.replace(/\D/g, "");
     const or: Prisma.UserWhereInput[] = [
-      { name: { contains: query.q, mode: "insensitive" } },
-      { email: { contains: query.q, mode: "insensitive" } },
+      { name: { contains: escapeLike(query.q), mode: "insensitive" } },
+      { email: { contains: escapeLike(query.q), mode: "insensitive" } },
     ];
     if (digits.length >= 3) or.push({ phone: { contains: digits } });
     where.OR = or;

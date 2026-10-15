@@ -16,7 +16,11 @@
     "db:sample-orders": "tsx prisma/sample-orders.ts generate",
     "db:sample-orders:clear": "tsx prisma/sample-orders.ts clear",
     "test:watch": "vitest",
-    "db:tenant-check": "tsx prisma/tenant-check.ts"
+    "db:tenant-check": "tsx prisma/tenant-check.ts",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
+    "test:all": "npm test && npm run test:integration",
+    "db:test:create": "tsx tests/integration/create-test-db.ts",
+    "db:test:reset": "tsx tests/integration/reset-test-db.ts"
   },
   "keywords": [],
   "author": "",

@@ -1,3 +1,4 @@
+import { escapeLike } from "../utils/sql";
 import type { Prisma } from "../generated/prisma/client";
 import { prisma } from "../config/db";
 import type { RoleName } from "../types/auth";
@@ -108,9 +109,9 @@ export async function listInvoices(user: Actor, query: ListInvoicesQuery) {
     const text = query.q.replace(/^#/, "");
     const digits = query.q.replace(/\D/g, "");
     const or: Prisma.InvoiceWhereInput[] = [
-      { invoiceNo: { contains: query.q, mode: "insensitive" } },
-      { order: { customer: { name: { contains: query.q, mode: "insensitive" } } } },
-      { order: { walkInName: { contains: query.q, mode: "insensitive" } } },
+      { invoiceNo: { contains: escapeLike(query.q), mode: "insensitive" } },
+      { order: { customer: { name: { contains: escapeLike(query.q), mode: "insensitive" } } } },
+      { order: { walkInName: { contains: escapeLike(query.q), mode: "insensitive" } } },
     ];
     if (/^\d{1,9}$/.test(text)) or.push({ order: { orderNo: Number(text) } });
     if (digits.length >= 3) or.push({ order: { customer: { phone: { contains: digits } } } });

@@ -1,24 +1,15 @@
-import { rateLimit } from "express-rate-limit";
-
-const tooMany = {
-  success: false,
-  error: { code: "RATE_LIMITED", message: "Too many attempts. Please try again in a few minutes." },
-};
+import { createLimiter } from "./security";
 
 // Login, register, verify, reset
-export const authLimiter = rateLimit({
+export const authLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
   limit: 30,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: tooMany,
+  message: "Too many attempts. Please try again in a few minutes.",
 });
 
 // Sending OTPs costs money (SMS), so this is stricter
-export const otpLimiter = rateLimit({
+export const otpLimiter = createLimiter({
   windowMs: 15 * 60 * 1000,
   limit: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: tooMany,
+  message: "Too many attempts. Please try again in a few minutes.",
 });
