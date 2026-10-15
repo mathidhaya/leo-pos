@@ -49,7 +49,7 @@ export default function ImageUpload({ label, value, onChange, onUploadingChange 
     <div>
       <span className="mb-1.5 block text-sm font-medium text-gray-700">{label}</span>
       <div className="flex items-center gap-4">
-        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-gray-300 bg-gray-50 text-gray-400">
+        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-gray-300 bg-gray-50 text-gray-500">
           {uploading ? (
             <LoaderCircle className="h-6 w-6 animate-spin" aria-label="Uploading" />
           ) : value ? (

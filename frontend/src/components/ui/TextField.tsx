@@ -30,7 +30,7 @@ const TextField = forwardRef<HTMLInputElement, Props>(function TextField(
           aria-invalid={error ? true : undefined}
           aria-describedby={error || hint ? messageId : undefined}
           className={[
-            "h-12 w-full rounded-xl border bg-white px-4 text-base text-gray-900 placeholder:text-gray-400",
+            "h-12 w-full rounded-xl border bg-white px-4 text-base text-gray-900 placeholder:text-gray-500",
             "focus:outline-2 focus:outline-offset-0",
             error
               ? "border-red-400 focus:outline-red-500"

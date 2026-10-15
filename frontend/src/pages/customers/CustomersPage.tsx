@@ -100,7 +100,7 @@ export default function CustomersPage() {
               Search
             </label>
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
               <input
                 id="customer-search"
                 type="search"
@@ -157,7 +157,7 @@ export default function CustomersPage() {
 
       {data && data.items.length === 0 && (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
-          <Users className="mx-auto h-10 w-10 text-gray-400" />
+          <Users className="mx-auto h-10 w-10 text-gray-500" />
           <p className="mt-3 font-medium text-gray-900">{hasFilters ? "No customers match your search" : "No customers yet"}</p>
           <p className="text-sm text-gray-500">
             {hasFilters
@@ -204,7 +204,7 @@ export default function CustomersPage() {
                     <td className="px-4 py-3 text-right text-gray-700">{customer.orders}</td>
                     <td className="px-4 py-3 text-right font-semibold text-gray-900">{formatMoney(customer.spent)}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-gray-600">
-                      {customer.lastOrderAt ? formatDateTime(customer.lastOrderAt) : <span className="text-gray-400">Never</span>}
+                      {customer.lastOrderAt ? formatDateTime(customer.lastOrderAt) : <span className="text-gray-500">Never</span>}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1">

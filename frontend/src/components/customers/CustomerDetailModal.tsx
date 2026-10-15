@@ -70,18 +70,18 @@ export default function CustomerDetailModal({ customerId, onClose, onEdit, onDel
           <div className="space-y-5">
             <div className="space-y-1.5 text-sm text-gray-700">
               <p className="flex items-center gap-2">
-                <Phone className="h-4 w-4 shrink-0 text-gray-400" />
+                <Phone className="h-4 w-4 shrink-0 text-gray-500" />
                 {formatPhone(customer.phone)}
               </p>
               {customer.email && (
                 <p className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 shrink-0 text-gray-400" />
+                  <Mail className="h-4 w-4 shrink-0 text-gray-500" />
                   <span className="break-all">{customer.email}</span>
                 </p>
               )}
               {customer.address && (
                 <p className="flex items-start gap-2">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
                   <span>{customer.address}</span>
                 </p>
               )}

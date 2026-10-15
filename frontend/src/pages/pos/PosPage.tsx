@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, ShoppingCart } from "lucide-react";
 import { createOrder, type CreateOrderRequest } from "../../api/orders";
@@ -40,6 +40,21 @@ function PosScreen({ userId }: { userId: string }) {
   const queryClient = useQueryClient();
   const [cart, dispatch] = usePosCart(userId);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
+
+  // Counter speed: "/" jumps to the search box from anywhere on the page
+  const searchRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      const typing = target !== null && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
+      if (typing || document.querySelector('[role="dialog"]')) return;
+      event.preventDefault();
+      searchRef.current?.focus();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const [category, setCategory] = useState("");
   const [search, setSearch] = useState("");
@@ -337,9 +352,10 @@ function PosScreen({ userId }: { userId: string }) {
               Search products by name or code
             </label>
             <div className="relative">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
               <input
                 id="pos-search"
+                ref={searchRef}
                 type="search"
                 autoFocus
                 autoComplete="off"
@@ -437,7 +453,10 @@ function PosScreen({ userId }: { userId: string }) {
         />
       )}
 
-      {placed && <OrderPlacedModal orderId={placed.id} orderNo={placed.orderNo} total={placed.total} onClose={() => setPlaced(null)} />}
+      {placed && <OrderPlacedModal orderId={placed.id} orderNo={placed.orderNo} total={placed.total} onClose={() => {
+            setPlaced(null);
+            setTimeout(() => searchRef.current?.focus(), 0);
+          }} />}
 
       {confirmClear && (
         <ConfirmDialog

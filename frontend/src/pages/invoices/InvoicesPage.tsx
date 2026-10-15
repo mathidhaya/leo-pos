@@ -86,7 +86,7 @@ export default function InvoicesPage() {
             Search
           </label>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
             <input
               id="invoice-search"
               type="search"
@@ -128,7 +128,7 @@ export default function InvoicesPage() {
 
       {data && data.items.length === 0 && (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
-          <Receipt className="mx-auto h-10 w-10 text-gray-400" />
+          <Receipt className="mx-auto h-10 w-10 text-gray-500" />
           <p className="mt-3 font-medium text-gray-900">{hasFilters ? "No invoices match your filters" : "No invoices yet today"}</p>
           <p className="text-sm text-gray-500">{hasFilters ? "Try a wider date range or clear the filters." : "An invoice is created when an order is paid."}</p>
         </div>

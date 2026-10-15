@@ -26,7 +26,7 @@ const TextAreaField = forwardRef<HTMLTextAreaElement, Props>(function TextAreaFi
         aria-invalid={error ? true : undefined}
         aria-describedby={error || hint ? messageId : undefined}
         className={[
-          "w-full rounded-xl border bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-400",
+          "w-full rounded-xl border bg-white px-4 py-3 text-base text-gray-900 placeholder:text-gray-500",
           "focus:outline-2 focus:outline-offset-0",
           error
             ? "border-red-400 focus:outline-red-500"

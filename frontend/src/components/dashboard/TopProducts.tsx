@@ -10,7 +10,7 @@ export default function TopProducts({ products }: { products: TopProduct[] }) {
     <ol className="space-y-3">
       {products.map((product, index) => (
         <li key={product.id} className="flex items-center gap-3">
-          <span className="w-5 text-sm font-semibold text-gray-400">{index + 1}</span>
+          <span className="w-5 text-sm font-semibold text-gray-500">{index + 1}</span>
           {product.imageUrl ? (
             <img src={product.imageUrl} alt="" className="h-11 w-11 rounded-xl object-cover" />
           ) : (

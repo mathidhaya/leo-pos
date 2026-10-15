@@ -4,8 +4,8 @@
   --color-leo-50: #f0fdf4;
   --color-leo-100: #dcfce7;
   --color-leo-500: #22c55e;
-  --color-leo-600: #16a34a;
-  --color-leo-700: #15803d;
+  --color-leo-600: #15803d;
+  --color-leo-700: #166534;
 }
 
 body {
@@ -35,5 +35,57 @@ body {
   }
   @page {
     margin: 0;
+  }
+}
+
+
+/* ===== Step 16: usability and accessibility ===== */
+
+/* A clear ring around whatever the keyboard is on. It lives in the base layer, so a component's own ring still wins. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-leo-600);
+    outline-offset: 2px;
+  }
+}
+
+/* Numbers line up in columns */
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* People who ask their system for less motion get no pulsing or sliding (spinners stay, they show that something is happening) */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Touch screens: every control is at least 44 x 44 px, and a switch gets an invisible bigger tap area.
+   To undo this, delete this block. */
+@media (pointer: coarse) {
+  button:not([role="switch"]),
+  [role="tab"],
+  [role="radio"],
+  select,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]) {
+    min-height: 44px;
+  }
+  button[aria-label]:not([role="switch"]) {
+    min-width: 44px;
+  }
+  [role="switch"] {
+    position: relative;
+  }
+  [role="switch"]::after {
+    content: "";
+    position: absolute;
+    inset: -8px -4px;
   }
 }

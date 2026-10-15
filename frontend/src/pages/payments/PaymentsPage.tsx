@@ -30,7 +30,7 @@ function Status({ row }: { row: PaymentRow }) {
 }
 
 function CashDetails({ row }: { row: PaymentRow }) {
-  if (row.method !== "CASH" || !row.amountReceived) return <span className="text-gray-400">-</span>;
+  if (row.method !== "CASH" || !row.amountReceived) return <span className="text-gray-500">-</span>;
   return (
     <span className="text-gray-600">
       {formatRupeesText(row.amountReceived)} received, {formatRupeesText(row.changeGiven)} change
@@ -102,7 +102,7 @@ export default function PaymentsPage() {
               Search
             </label>
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
               <input
                 id="payment-search"
                 type="search"
@@ -183,7 +183,7 @@ export default function PaymentsPage() {
 
       {data && data.items.length === 0 && (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
-          <Wallet className="mx-auto h-10 w-10 text-gray-400" />
+          <Wallet className="mx-auto h-10 w-10 text-gray-500" />
           <p className="mt-3 font-medium text-gray-900">{hasFilters ? "No payments match your filters" : "No payments yet today"}</p>
           <p className="text-sm text-gray-500">{hasFilters ? "Try a wider date range or clear the filters." : "Payments will appear here."}</p>
         </div>

@@ -124,7 +124,7 @@ export default function ForgotPasswordPage() {
         </Link>
       }
     >
-      <p className="mb-4 text-xs font-medium uppercase tracking-wide text-gray-400">{copy.label}</p>
+      <p className="mb-4 text-xs font-medium uppercase tracking-wide text-gray-500">{copy.label}</p>
 
       {step === "identifier" && (
         <div className="space-y-5">

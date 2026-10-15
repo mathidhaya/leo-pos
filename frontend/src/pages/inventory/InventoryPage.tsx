@@ -167,7 +167,7 @@ export default function InventoryPage() {
                   Search
                 </label>
                 <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
                   <input
                     id="inventory-search"
                     type="search"
@@ -238,7 +238,7 @@ export default function InventoryPage() {
 
           {data && data.items.length === 0 && (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
-              <Boxes className="mx-auto h-10 w-10 text-gray-400" />
+              <Boxes className="mx-auto h-10 w-10 text-gray-500" />
               <p className="mt-3 font-medium text-gray-900">{hasFilters ? "No products match your filters" : "No products yet"}</p>
               <p className="text-sm text-gray-500">
                 {hasFilters ? "Try a different search or clear the filters." : "Add products in the Products page first."}
@@ -290,7 +290,7 @@ export default function InventoryPage() {
                         </td>
                         <td className="px-4 py-3 text-right whitespace-nowrap text-xs">
                           <span className="font-medium text-leo-700">+{item.added30}</span>
-                          <span className="mx-1 text-gray-400">/</span>
+                          <span className="mx-1 text-gray-500">/</span>
                           <span className="font-medium text-red-600">-{item.removed30}</span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500">

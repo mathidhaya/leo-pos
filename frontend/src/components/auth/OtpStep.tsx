@@ -71,7 +71,7 @@ export default function OtpStep({ identifier, purpose, onVerified, onBack }: Pro
       <OtpInput value={otp} onChange={setOtp} disabled={verifying} hasError={Boolean(error)} />
 
       {import.meta.env.DEV && (
-        <p className="text-center text-xs text-gray-400">
+        <p className="text-center text-xs text-gray-500">
           Development mode: the OTP is printed in the backend terminal.
         </p>
       )}
@@ -88,7 +88,7 @@ export default function OtpStep({ identifier, purpose, onVerified, onBack }: Pro
           type="button"
           onClick={handleResend}
           disabled={remaining > 0 || resending}
-          className="font-medium text-leo-700 hover:text-leo-600 disabled:cursor-not-allowed disabled:text-gray-400"
+          className="font-medium text-leo-700 hover:text-leo-600 disabled:cursor-not-allowed disabled:text-gray-500"
         >
           {remaining > 0 ? `Resend OTP in ${remaining}s` : resending ? "Sending..." : "Resend OTP"}
         </button>

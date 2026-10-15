@@ -78,7 +78,7 @@ export default function CartPanel({
 
         {lines.length === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-300 py-8 text-center text-sm text-gray-500">
-            <ShoppingCart className="mx-auto mb-2 h-8 w-8 text-gray-400" />
+            <ShoppingCart className="mx-auto mb-2 h-8 w-8 text-gray-500" />
             No items yet. Tap a product to add it.
           </div>
         ) : (

@@ -44,7 +44,7 @@ interface ActionsProps {
 }
 
 function Actions({ member, onEdit, onReset, onDelete }: ActionsProps) {
-  if (!member.canModify) return <span className="text-xs text-gray-400">Owner account</span>;
+  if (!member.canModify) return <span className="text-xs text-gray-500">Owner account</span>;
 
   return (
     <div className="flex justify-end gap-1">
@@ -179,7 +179,7 @@ export default function StaffPage() {
               Search
             </label>
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
               <input
                 id="staff-search"
                 type="search"
@@ -231,7 +231,7 @@ export default function StaffPage() {
 
       {data && data.items.length === 0 && (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
-          <Users className="mx-auto h-10 w-10 text-gray-400" />
+          <Users className="mx-auto h-10 w-10 text-gray-500" />
           <p className="mt-3 font-medium text-gray-900">{hasFilters ? "No one matches your filters" : "No staff yet"}</p>
           <p className="text-sm text-gray-500">
             {hasFilters ? "Try a different search, or clear the filters." : "Add your first manager or cashier."}
@@ -272,7 +272,7 @@ export default function StaffPage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-gray-600">{formatYmd(member.joiningDate)}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-gray-600">
-                      {member.lastLoginAt ? formatDateTime(member.lastLoginAt) : <span className="text-gray-400">Never</span>}
+                      {member.lastLoginAt ? formatDateTime(member.lastLoginAt) : <span className="text-gray-500">Never</span>}
                     </td>
                     <td className="px-4 py-3 text-right text-gray-700">{member.ordersTaken}</td>
                     <td className="px-4 py-3">

@@ -81,7 +81,7 @@ export default function CategoriesPage() {
 
       {data && data.length === 0 && (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
-          <Tags className="mx-auto h-10 w-10 text-gray-400" />
+          <Tags className="mx-auto h-10 w-10 text-gray-500" />
           <p className="mt-3 font-medium text-gray-900">No categories yet</p>
           <p className="text-sm text-gray-500">Add your first category, for example Coffee or Snacks.</p>
         </div>
