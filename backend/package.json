@@ -20,7 +20,10 @@
     "test:integration": "vitest run --config vitest.integration.config.mts",
     "test:all": "npm test && npm run test:integration",
     "db:test:create": "tsx tests/integration/create-test-db.ts",
-    "db:test:reset": "tsx tests/integration/reset-test-db.ts"
+    "db:test:reset": "tsx tests/integration/reset-test-db.ts",
+    "cli:create-owner": "tsx src/cli/create-owner.ts",
+    "cli:reset-password": "tsx src/cli/reset-password.ts",
+    "cli:send-test": "tsx src/cli/send-test-message.ts"
   },
   "keywords": [],
   "author": "",
@@ -38,8 +41,10 @@
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.4.0",
+    "nodemailer": "^10.1.2",
     "pdfkit": "^0.20.2",
     "pg": "^8.23.1",
+    "prisma": "^8.0.0-rc.23",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -49,9 +54,9 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.3.0",
     "@types/node": "^26.6.4",
+    "@types/nodemailer": "^8.0.2",
     "@types/pdfkit": "^0.17.6",
     "@types/supertest": "^7.2.1",
-    "prisma": "^7.10.0",
     "supertest": "^7.3.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

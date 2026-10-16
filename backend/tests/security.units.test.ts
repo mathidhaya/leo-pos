@@ -275,6 +275,7 @@ describe("code scans", () => {
     expect(filesContaining(files, /passwordHash/)).toEqual([
       "src/services/account.service.ts",
       "src/services/auth.service.ts",
+      "src/services/owner.service.ts",
       "src/services/staff.service.ts",
     ]);
     expect(filesContaining(sourceFiles(path.join(backendSrc, "controllers"), [".ts"]), /passwordHash/)).toEqual([]);

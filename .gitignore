@@ -4,3 +4,7 @@ dist/
 .DS_Store
 backend/src/generated/
 backend/uploads/
+
+# Deployment secrets and backups: never commit these
+deploy/.env
+deploy/backups/

@@ -22,6 +22,13 @@ function originProblem(origin: string): string | null {
 // A real secret is random. These words mean someone forgot to replace an example value.
 const PLACEHOLDER = /replace|change|example|placeholder|secret|password|12345/i;
 
+// An empty value in the .env file ("SMTP_HOST=") means "not set"
+const optionalText = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value) => (value ? value : undefined));
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -30,7 +37,7 @@ const envSchema = z
     DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
     JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
     JWT_REFRESH_SECRET: z.string().min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
-    // How many reverse proxies (nginx, a load balancer) sit in front of this server. 0 = none.
+    // How many reverse proxies (nginx, Caddy, a load balancer) sit in front of this server. 0 = none.
     // Needed so rate limits see each visitor's real address instead of the proxy's.
     TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
     // Set to "false" once your cafe is registered, so strangers cannot create cafes on your server
@@ -38,6 +45,21 @@ const envSchema = z
       .enum(["true", "false"])
       .default("true")
       .transform((value) => value === "true"),
+
+    // Sending OTP codes by email (any SMTP service)
+    SMTP_HOST: optionalText,
+    SMTP_PORT: z.preprocess(
+      (value) => (value === "" || value === undefined ? undefined : value),
+      z.coerce.number().int().min(1).max(65535).default(587)
+    ),
+    SMTP_USER: optionalText,
+    SMTP_PASS: optionalText,
+    SMTP_FROM: optionalText,
+
+    // Sending OTP codes by SMS (Twilio)
+    TWILIO_ACCOUNT_SID: optionalText,
+    TWILIO_AUTH_TOKEN: optionalText,
+    TWILIO_FROM: optionalText,
   })
   .superRefine((value, ctx) => {
     const add = (path: string, message: string) => ctx.addIssue({ code: "custom", path: [path], message });
@@ -48,6 +70,27 @@ const envSchema = z
 
     const problem = originProblem(value.CORS_ORIGIN);
     if (problem) add("CORS_ORIGIN", problem);
+
+    // Email: the server and the sender address go together, and so do the user name and password
+    const smtpPair = [value.SMTP_HOST, value.SMTP_FROM];
+    if (smtpPair.some(Boolean) && !smtpPair.every(Boolean)) {
+      add("SMTP_HOST", "SMTP_HOST and SMTP_FROM must be set together.");
+    }
+    if (Boolean(value.SMTP_USER) !== Boolean(value.SMTP_PASS)) {
+      add("SMTP_USER", "SMTP_USER and SMTP_PASS must be set together.");
+    }
+    if (value.SMTP_FROM && !value.SMTP_FROM.includes("@")) {
+      add("SMTP_FROM", "SMTP_FROM must contain an email address, for example Leo Cafe <no-reply@example.com>.");
+    }
+
+    // SMS: all three or none
+    const twilio = [value.TWILIO_ACCOUNT_SID, value.TWILIO_AUTH_TOKEN, value.TWILIO_FROM];
+    if (twilio.some(Boolean) && !twilio.every(Boolean)) {
+      add("TWILIO_ACCOUNT_SID", "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_FROM must be set together.");
+    }
+    if (value.TWILIO_ACCOUNT_SID && !/^AC[0-9a-fA-F]{32}$/.test(value.TWILIO_ACCOUNT_SID)) {
+      add("TWILIO_ACCOUNT_SID", "TWILIO_ACCOUNT_SID should start with AC and be 34 characters long.");
+    }
 
     if (value.NODE_ENV === "production") {
       if (!value.CORS_ORIGIN.startsWith("https://")) add("CORS_ORIGIN", "In production CORS_ORIGIN must start with https://.");

@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.env.*
+uploads
+tests
+src/generated
+*.log
+test-errors.txt
+coverage

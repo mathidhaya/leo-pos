@@ -158,6 +158,18 @@ export async function sendOtp(rawIdentifier: string, purpose: OtpPurposeName): P
   // Housekeeping: records older than two days are removed
   await prisma.otpVerification.deleteMany({ where: { createdAt: { lt: new Date(now - OTP_HISTORY_KEEP_MS) } } });
 
+  if (purpose === "RESET") {
+    // Sent in the background, and a failure is only logged, so nobody can find out which accounts exist by timing or by errors.
+    void (async () => {
+      try {
+        await deliverOtp(id, otp, purpose);
+      } catch {
+        console.error("OTP delivery failed for a password reset.");
+      }
+    })();
+    return;
+  }
+
   await deliverOtp(id, otp, purpose);
 }
 
