@@ -6,7 +6,8 @@ import type { Identifier } from "../utils/identifier";
 const BRAND = "Leo Cafe";
 const VALID_MINUTES = 5;
 
-export const emailEnabled = (): boolean => Boolean(env.SMTP_HOST && env.SMTP_FROM);
+export const emailEnabled = (): boolean =>
+  Boolean(env.BREVO_API_KEY && env.EMAIL_FROM) || Boolean(env.SMTP_HOST && env.SMTP_FROM);
 export const smsEnabled = (): boolean => Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_FROM);
 
 export function otpMessage(otp: string): string {
@@ -41,6 +42,38 @@ function getTransport(): Transporter {
 }
 
 async function sendEmail(to: string, subject: string, text: string): Promise<void> {
+  // Preferred: send over HTTPS (works on hosts that block SMTP ports)
+  if (env.BREVO_API_KEY && env.EMAIL_FROM) {
+    try {
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "api-key": env.BREVO_API_KEY,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          sender: { name: BRAND, email: env.EMAIL_FROM },
+          to: [{ email: to }],
+          subject,
+          textContent: text,
+        }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        console.error("Email delivery failed:", res.status, detail.slice(0, 200));
+        throw deliveryFailed();
+      }
+      return;
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      console.error("Email delivery failed:", err instanceof Error ? err.name : "unknown error");
+      throw deliveryFailed();
+    }
+  }
+
+  // Fallback: SMTP
   try {
     await getTransport().sendMail({ from: env.SMTP_FROM, to, subject, text });
   } catch (err) {
@@ -49,7 +82,6 @@ async function sendEmail(to: string, subject: string, text: string): Promise<voi
     throw deliveryFailed();
   }
 }
-
 // ---------- SMS (Twilio) ----------
 
 async function sendSms(phone: string, text: string): Promise<void> {

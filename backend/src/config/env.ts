@@ -55,6 +55,8 @@ const envSchema = z
     SMTP_USER: optionalText,
     SMTP_PASS: optionalText,
     SMTP_FROM: optionalText,
+    BREVO_API_KEY: optionalText,
+    EMAIL_FROM: optionalText,
 
     // Sending OTP codes by SMS (Twilio)
     TWILIO_ACCOUNT_SID: optionalText,
