@@ -62,6 +62,11 @@ const envSchema = z
     TWILIO_ACCOUNT_SID: optionalText,
     TWILIO_AUTH_TOKEN: optionalText,
     TWILIO_FROM: optionalText,
+
+    // Permanent image storage (Cloudinary). Leave all three empty to keep images on the local disk.
+    CLOUDINARY_CLOUD_NAME: optionalText,
+    CLOUDINARY_API_KEY: optionalText,
+    CLOUDINARY_API_SECRET: optionalText,
   })
   .superRefine((value, ctx) => {
     const add = (path: string, message: string) => ctx.addIssue({ code: "custom", path: [path], message });
@@ -86,6 +91,11 @@ const envSchema = z
     }
 
     // SMS: all three or none
+    const cloudinary = [value.CLOUDINARY_CLOUD_NAME, value.CLOUDINARY_API_KEY, value.CLOUDINARY_API_SECRET];
+    if (cloudinary.some(Boolean) && !cloudinary.every(Boolean)) {
+      add("CLOUDINARY_CLOUD_NAME", "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET must be set together.");
+    }
+
     const twilio = [value.TWILIO_ACCOUNT_SID, value.TWILIO_AUTH_TOKEN, value.TWILIO_FROM];
     if (twilio.some(Boolean) && !twilio.every(Boolean)) {
       add("TWILIO_ACCOUNT_SID", "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_FROM must be set together.");
